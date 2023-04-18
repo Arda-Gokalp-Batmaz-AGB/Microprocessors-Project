@@ -264,14 +264,8 @@ Show_Brain_Info:
 	LDR R9, [R2]
 	LDR R2, =BRAIN_BASE_ADDRESS
 Show_Brain_Info_Helper_Loop:
-	//MOV R6,R2
-	LDRB R10, [R2]
-	MOV  R6, R10
 	MOV R6,R2
 	BL LoadText
-	ADD R2,R2,#1
-	CMP R9,R2
-	BGE Show_Brain_Info_Helper_Loop
 	B END_BRAIN_INFO_SHOW
 _stop:
 	B _stop
