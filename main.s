@@ -263,16 +263,15 @@ Show_Brain_Info:
 	LDR R2, =BRAIN_POINTER_ADDRESS
 	LDR R9, [R2]
 	LDR R2, =BRAIN_BASE_ADDRESS
-Show_Brain_Info_Helper_Loop:
 	MOV R6,R2
 	BL LoadText
-	B END_BRAIN_INFO_SHOW
+	B Show_Panel
 _stop:
 	B _stop
 
 KEY_ISR:
 	B Init_Input_Loop
-END_BRAIN_INFO_SHOW:
+Show_Panel:
 	LDR R12, =PANEL_DECISION_MASK
 	LDR  R6, =DECISION_PANEL_STRING
 	BL LoadText
