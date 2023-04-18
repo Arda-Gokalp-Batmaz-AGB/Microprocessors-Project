@@ -264,9 +264,12 @@ Show_Brain_Info:
 	LDR R9, [R2]
 	LDR R2, =BRAIN_BASE_ADDRESS
 Show_Brain_Info_Helper_Loop:
-	LDRB R10, [R2],#1
+	//MOV R6,R2
+	LDRB R10, [R2]
 	MOV  R6, R10
+	MOV R6,R2
 	BL LoadText
+	ADD R2,R2,#1
 	CMP R9,R2
 	BGE Show_Brain_Info_Helper_Loop
 	B END_BRAIN_INFO_SHOW
@@ -343,11 +346,12 @@ WriteText:
 	LDRB r0, [R7]    // load a single byte from the string
 	CMP  r0, #0
 	BEQ  END_Write_Text  // stop when the null character is found
-	
+	CMP  r0, #0xaa
+	BEQ  END_Write_Text
 	B WAIT
 	
 Write_Text_Helper:
-	STR  r0, [r1]    // copy the character to the UART DATA field
+	STR  r0, [r1]    // copy the charact1er to the UART DATA field
 	ADD  R7, R7, #1  // move to next character in memory
 	B WriteText
 END_Write_Text:
