@@ -290,6 +290,10 @@ Store_Info_Input_To_Machine:
 	B InputLoop
 
 Reset_Info_Input_Machine:
+	SUB R2,R2,#1	
+	MOV R7,#0x23
+	STRB R7,[R0]
+	
 	LDR R2, =MACHINE_POINTER_ADDRESS
 	LDR R9, [R2]
 	LDR R2, =MACHINE_BASE_ADDRESS
@@ -310,7 +314,6 @@ Put_Info_To_Brain:
 	//LDR R0, =BRAIN_BASE_ADDRESS
 	B Put_Info_To_Brain_Helper_Loop
 Put_Info_To_Brain_Helper_Loop:
-		
 	LDRB R10, [R2]
 	STRB R10,[R0]
 	
