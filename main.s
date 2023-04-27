@@ -370,8 +370,10 @@ WAIT:
 // Define a null-terminated string
 INFO_PROMPT_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
 .asciz    "Enter Information You Want to Inject \n > "
+MACHINE_DECISION_STRING: 
+.asciz "\n Enter 1 to Open Injection , Enter 2 to see Machine's Situation \n >"
 BRAIN_DECISION_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
-.asciz    "Enter 1 to see Brain \n > "
+.asciz    "Enter 1 to see Brain Data, Enter 2 to see Brain's Situation, Enter 3 to see Reset Brain \n > "
 INFO_INPUT_SUCESS:
 .asciz    "\n Information injection to the Brain is Successfull! \n"
 INVALID_REQUEST_STRING:
