@@ -36,7 +36,10 @@
 //.equ MACHINE_CURRENT_ADDRESS, 0xFFFFea10
 .org    0x1000    // Start at memory location 1000
 
-.text  // Code Section
+.text  
+Base_Addres: .word 0xFF200020
+HEXTABLE: .word 0b00111111,0b00000110,0b01011011,0b01001111,0b01100110,0b01101101,0b01111101,0b00000111,0b01111111,0b01101111
+// Code Section
 .global _start
 _start:
 	BL Init_Machine_And_Brain
@@ -184,7 +187,130 @@ CONFIG_INTERRUPT:
 	POP {R4-R5, PC}	
 	
 	
+
+
+
+
+
+
+Display_Number:
+	MOV R0, R9
+	LDR R2, Base_Addres
+	MOV R3, #0 // COUNTER_THOUSAND
+	MOV R4, #0 // COUNTER_HUNDRED
+	MOV R5, #0 // COUNTER_TEN
+	MOV R6, #0 // COUNTER_ONE
+	MOV R7, #0 // 
+	MOV R8, #0 // 
+	MOV R9, #0 // 
+	B IS_THERE_THOUSAND
+
+Get_Zero_Hexa:
+	LDR R8, [R7]
+	BX LR
+FIND_HEXA_NUMBER:
+	CMP R9,#0
+	BEQ Get_Zero_Hexa
 	
+	LDR R8, [R7] , #4
+	SUB R9,R9,#1
+	CMP R9,#0
+	BNE FIND_HEXA_NUMBER
+	LDR R8, [R7]
+	BX LR
+
+IS_THERE_THOUSAND:
+	CMP R0,#1000
+	BGE LOOP_THOUSAND
+	LDR R3 ,HEXTABLE
+	B IS_THERE_HUNDRED
+
+IS_THERE_HUNDRED:
+	CMP R0,#100
+	BGE LOOP_HUNDRED
+	LDR R4 ,HEXTABLE
+	B IS_THERE_TEN
+IS_THERE_TEN:
+	CMP R0,#10
+	BGE LOOP_TEN
+	LDR R5 ,HEXTABLE
+	B LOOP_ONE
+	
+LOOP_THOUSAND://R3
+	SUB R0,R0,#1000
+	CMP R0,#1000
+	ADD R3,R3,#1
+	BGE LOOP_THOUSAND
+	
+	LDR R7,=HEXTABLE
+	MOV R9,R3
+	BL FIND_HEXA_NUMBER
+	MOV R3,R8
+	MOV R8,#0
+	B IS_THERE_HUNDRED
+LOOP_HUNDRED://R4
+	SUB R0,R0,#100
+	CMP R0,#100
+	ADD R4,R4,#1
+	BGE LOOP_HUNDRED
+	
+	LDR R7,=HEXTABLE	
+	MOV R9,R4
+	BL FIND_HEXA_NUMBER
+	MOV R4,R8
+	MOV R8,#0
+	
+	B IS_THERE_TEN
+LOOP_TEN://R5
+	SUB R0,R0,#10
+	CMP R0,#10
+	ADD R5,R5,#1
+	BGE LOOP_TEN
+	
+	LDR R7,=HEXTABLE	
+	MOV R9,R5
+	BL FIND_HEXA_NUMBER
+	MOV R5,R8
+	MOV R8,#0
+	
+	B LOOP_ONE
+
+LOOP_ONE://R6
+	MOV R6,R0
+	LDR R7,=HEXTABLE	
+	MOV R9,R6
+	BL FIND_HEXA_NUMBER
+	MOV R6,R8
+	MOV R8,#0
+	B Write_All_Digits
+Write_All_Digits:
+	MOV R0,#0
+	ADD R0,R0,R6
+	LSL R5, #8
+	ADD R0,R0,R5
+	LSL R4, #16
+	ADD R0,R0,R4
+	LSL R3, #24
+	ADD R0,R0,R3
+	STR R0,[R2]
+	B End_Show_Brain_Info
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -294,6 +420,15 @@ Show_Brain_Info:
 	LDR R2, =BRAIN_BASE_ADDRESS
 	MOV R6,R2
 	BL LoadText
+	LDR R2, =BRAIN_POINTER_ADDRESS
+	LDR R9, [R2]
+	LDR R2, =BRAIN_BASE_ADDRESS
+	SUB R9,R9,R2
+	PUSH {R0-R10}
+	B Display_Number
+
+End_Show_Brain_Info:
+	POP {R0-R10}
 	B Show_Panel
 Reset_Brain_Info:
 	LDR R10, =BRAIN_RESET_ADDRESS
@@ -450,9 +585,12 @@ DECISION_PANEL_STRING: // ADD CATEGORY // INFO cOUNT
 DECISION_STATUS_UPDATE_INFO_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Brain Set To = "
 DECISION_STATUS_FOCUSED_STRING: // ADD CATEGORY // INFO cOUNT
-.asciz "\n Brain Is FOCUSED you can enter information"
+.asciz "\n Brain Is FOCUSED you can enter information \n"
 DECISION_STATUS_DIFFUSED_STRING: // ADD CATEGORY // INFO cOUNT
-.asciz "\n Brain Is DIFFUSED you can't enter information"
+.asciz "\n Brain Is DIFFUSED you can't enter information \n"
+TOTAL_INFO_COUNT_STRING: // ADD CATEGORY // INFO cOUNT
+.asciz "\n Total Info Count:"
+
 INFO_STRING:
 .asciz "Brain panel remove info, see infos, frequently used infos, remove some info in order to add new ones, reset buttons on brain and enter panel \033[2J"
 .asciz    "Enter 1 To Inject Information to Brain \n Enter 2 to see Injected Information Enter 3 to see injected info in specific category, category count \n Enter 4 to show total info count \n Enter 5 to return main menu"
