@@ -403,8 +403,17 @@ End_Info_Input:
 	STR R9,[R2]
 	
 	LDR R12, =PANEL_DECISION_MASK
-	LDR  R6, =INFO_INPUT_SUCESS
+	
+	PUSH {R0-R10}
+	LDR R3, =BRAIN_STATUS_ADDRESS
+	LDR R1,[R3]
+	LDR R4, =BRAIN_FOCUSED_STATUS_MASK
+	CMP R1,R4
+	LDREQ  R6, =INFO_INPUT_SUCESS
+	LDRNE  R6, =INFO_INPUT_PROHIBITED_IN_DIFFUSED_MODE_STRING
 	BL LoadText
+	POP {R0-R10}
+	
 	LDR  R6, =DECISION_PANEL_STRING
 	BL LoadText
 	
@@ -483,6 +492,7 @@ Show_Brain_Status:
 	CMP R1,R4
 	MOVEQ R6,R2
 	BLEQ LoadText
+	
 	POP {R0-R10}
 	B Show_Panel
 	
@@ -582,6 +592,16 @@ Reset_Info_Helper_Loop:
 	BGE End_Info_Input
 	B Reset_Info_Helper_Loop
 Put_Info_To_Brain:
+	//BRAIN IS IN DIFFUSE MODE
+	PUSH {R0-R10}
+	LDR R3, =BRAIN_STATUS_ADDRESS
+	LDR R1,[R3]
+	LDR R4, =BRAIN_FOCUSED_STATUS_MASK
+	CMP R1,R4
+	POP {R0-R10}
+	BNE Reset_Info_Input_Machine
+	
+	
 	LDR R2, =MACHINE_POINTER_ADDRESS
 	LDR R9, [R2]
 	LDR R2, =MACHINE_BASE_ADDRESS
@@ -610,7 +630,7 @@ Put_Info_To_Brain_Helper_Loop:
 LoadText:
 	//Init Timer
 	LDR R11, =0xFFFEC600 // PRIVATE TIMER
-	LDR R10,=10000000
+	LDR R10,=12000000
 	STR R10,[R11]
 	MOV R10, #0b011 
 	STR R10, [R11, #0x8] 
@@ -651,7 +671,7 @@ WAIT:
 INFO_PROMPT_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
 .asciz    "Enter Information You Want to Inject \n > "
 MACHINE_DECISION_STRING: 
-.asciz "\n Enter 1 to Open Injection , Enter 2 to see Machine's Situation \n >"
+.asciz "\n Enter 1 to Open Injection , Enter 2 to see Machine's Status \n >"
 BRAIN_DECISION_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
 .asciz    "Enter 1 to see Brain Data, Enter 2 to see Brain's status, Enter 3 to reset Brain \n > "
 BRAIN_RESET_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
@@ -670,6 +690,8 @@ DECISION_STATUS_FOCUSED_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Brain Is FOCUSED you can enter information \n"
 DECISION_STATUS_DIFFUSED_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Brain Is DIFFUSED you can't enter information \n"
+INFO_INPUT_PROHIBITED_IN_DIFFUSED_MODE_STRING: // ADD CATEGORY // INFO cOUNT
+.asciz "\n Brain Is in DIFFUSED mode therefore you can't enter information \n"
 TOTAL_INFO_COUNT_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Total Info Count:"
 
