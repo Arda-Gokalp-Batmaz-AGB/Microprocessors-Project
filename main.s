@@ -12,7 +12,6 @@
 .equ UART_BASE, 0xFF201000     // UART base address
 .equ BRAIN_MODE_MASK, 0b100
 .equ MACHINE_MODE_MASK, 0b1000
-
 .equ PANEL_DECISION_MASK, 0b10
 .equ WRITING_MODE_MASK, 0b1
 
@@ -239,7 +238,7 @@ Check_Input_MASK:
 	CMP R12,#0b100 
 	BEQ Brain_Decision
 	CMP R12,#0b1000 
-	BEQ Injection_Decision
+	BEQ Machine_Decision
 Panel_Decision:
 	MOV R11, #0x0a
 	STR R11, [R1]
@@ -271,6 +270,14 @@ Injection_Decision:
 	BL LoadText
 	LDR R12, =WRITING_MODE_MASK
 	B InputLoop
+Machine_Decision:
+	MOV R11, #0x0a
+	STR R11, [R1]
+	
+	CMP R10,#0x31 // 1 ENTERED
+	BEQ Injection_Decision
+	
+	B Invalid_Request
 Brain_Decision:
 	MOV R11, #0x0a
 	STR R11, [R1]
@@ -313,6 +320,9 @@ Reset_Brain_Info_End:
 	AND R2,R2,#0
 	STR R2,[R10]
 	//MASK BITI SIFIRLA
+	LDR R10, =BRAIN_POINTER_ADDRESS
+	LDR R2, =BRAIN_BASE_ADDRESS
+	STR R2,[R10]
 	
 	LDR R12, =PANEL_DECISION_MASK
 	LDR R6, =BRAIN_RESET_STRING
@@ -428,7 +438,7 @@ INFO_PROMPT_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
 MACHINE_DECISION_STRING: 
 .asciz "\n Enter 1 to Open Injection , Enter 2 to see Machine's Situation \n >"
 BRAIN_DECISION_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
-.asciz    "Enter 1 to see Brain Data, Enter 2 to see Brain's Situation, Enter 3 to see Reset Brain \n > "
+.asciz    "Enter 1 to see Brain Data, Enter 2 to see Brain's status, Enter 3 to reset Brain \n > "
 BRAIN_RESET_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
 .asciz    "Brain reset successfully\n > "
 INFO_INPUT_SUCESS:
