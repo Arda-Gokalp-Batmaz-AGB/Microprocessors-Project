@@ -15,8 +15,8 @@
 .equ PANEL_DECISION_MASK, 0b10
 .equ WRITING_MODE_MASK, 0b1
 
-.equ BRAIN_READY_STATUS_MASK, 0b1
-.equ BRAIN_SLEEP_STATUS_MASK, 0b10
+.equ BRAIN_FOCUSED_STATUS_MASK, 0b1
+.equ BRAIN_DIFFUSED_STATUS_MASK, 0b10
 
 .equ BRAIN_RESET_MASK, 0b1
 
@@ -447,6 +447,12 @@ INVALID_REQUEST_STRING:
 .asciz    "\n Please enter a valid decision input \n"
 DECISION_PANEL_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Enter 1 to open Brain Panel , Enter 2 to open Machine Panel \n >"
+DECISION_STATUS_UPDATE_INFO_STRING: // ADD CATEGORY // INFO cOUNT
+.asciz "\n Brain Set To = "
+DECISION_STATUS_FOCUSED_STRING: // ADD CATEGORY // INFO cOUNT
+.asciz "\n Brain Is FOCUSED you can enter information"
+DECISION_STATUS_DIFFUSED_STRING: // ADD CATEGORY // INFO cOUNT
+.asciz "\n Brain Is DIFFUSED you can't enter information"
 INFO_STRING:
 .asciz "Brain panel remove info, see infos, frequently used infos, remove some info in order to add new ones, reset buttons on brain and enter panel \033[2J"
 .asciz    "Enter 1 To Inject Information to Brain \n Enter 2 to see Injected Information Enter 3 to see injected info in specific category, category count \n Enter 4 to show total info count \n Enter 5 to return main menu"
