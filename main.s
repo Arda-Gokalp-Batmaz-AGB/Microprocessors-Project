@@ -11,8 +11,11 @@
 // Constants
 .equ UART_BASE, 0xFF201000     // UART base address
 .equ BRAIN_MODE_MASK, 0b100
+.equ MACHINE_MODE_MASK, 0b1000
+
 .equ PANEL_DECISION_MASK, 0b10
 .equ WRITING_MODE_MASK, 0b1
+
 .equ MACHINE_BASE_ADDRESS, 0xFFFFea10 // MAX ADD  0xFFFFF300
 .equ MACHINE_MAX_ADDRESS, 0xFFFFF300 // MAX ADD  
 .equ MACHINE_POINTER_ADDRESS, 0xFFFFea00
@@ -226,6 +229,8 @@ Check_Input_MASK:
 	BEQ Panel_Decision
 	CMP R12,#0b100 
 	BEQ Brain_Decision
+	CMP R12,#0b1000 
+	BEQ Injection_Decision
 Panel_Decision:
 	MOV R11, #0x0a
 	STR R11, [R1]
@@ -233,7 +238,7 @@ Panel_Decision:
 	CMP R10,#0x31 // 1 ENTERED
 	BEQ Open_Brain_Panel
 	CMP R10,#0x32
-	BEQ Open_Injection_Panel
+	BEQ Open_Machine_Panel
 	
 	B Invalid_Request
 
@@ -241,15 +246,21 @@ Invalid_Request:
 	LDR  R6, =INVALID_REQUEST_STRING
 	BL LoadText
 	B InputLoop
-Open_Injection_Panel:
-	LDR  R6, =INFO_PROMPT_STRING
+Open_Machine_Panel:
+	//BEQ Open_Injection_Panel
+	LDR  R6, =MACHINE_DECISION_STRING
 	BL LoadText
-	LDR R12, =WRITING_MODE_MASK
+	LDR R12, =MACHINE_MODE_MASK
 	B InputLoop
 Open_Brain_Panel:
 	LDR  R6, =BRAIN_DECISION_STRING
 	BL LoadText
 	LDR R12, =BRAIN_MODE_MASK
+	B InputLoop
+Injection_Decision:
+	LDR  R6, =INFO_PROMPT_STRING
+	BL LoadText
+	LDR R12, =WRITING_MODE_MASK
 	B InputLoop
 Brain_Decision:
 	MOV R11, #0x0a
