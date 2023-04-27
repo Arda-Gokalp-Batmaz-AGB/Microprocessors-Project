@@ -9,7 +9,8 @@
 	B SERVICE_FIQ // FIQ interrupt vector
 	
 // Constants
-.equ UART_BASE, 0xFF201000     // UART base address
+.equ UART_BASE, 0xFF201000   
+.equ BUTTONS_BASE, 0xFF200050
 .equ BRAIN_MODE_MASK, 0b100
 .equ MACHINE_MODE_MASK, 0b1000
 .equ PANEL_DECISION_MASK, 0b10
@@ -72,11 +73,15 @@ InitInterrupts:
 	LDR SP, =0x3FFFFFFF - 3 // set SVC stack to top of DDR3 memory
 	BL CONFIG_GIC // configure the ARM GIC
 
-	// write to the pushbutton KEY interrupt mask register
 	LDR R0, =UART_BASE // pushbutton KEY base address
 	MOV R1, #0xF // set interrupt mask bits
 	STR R1, [R0, #0x4] // interrupt mask register (base + 8)
 
+
+	LDR R0, =BUTTONS_BASE // pushbutton KEY base address
+	MOV R1, #0xF // set interrupt mask bits
+	STR R1, [R0, #0x8] // interrupt mask register (base + 8)
+	
 	MOV R0, #0b01010011 // IRQ unmasked, MODE = SVC
 	MSR CPSR_c, R0
 IDLE:
@@ -104,9 +109,12 @@ SERVICE_IRQ:
 	LDR R5, [R4, #0x0C] // read from ICCIAR
 FPGA_IRQ1_HANDLER:
 	CMP R5, #80
+	BEQ UAT_INTERRUPT
+	CMP R5, #73
+	BEQ KEY_ISR
+	
 UNEXPECTED:
-	BNE UNEXPECTED // if not recognized, stop here
-	B KEY_ISR
+	B UNEXPECTED // if not recognized, stop here
 EXIT_IRQ:
 	/* Write to the End of Interrupt Register (ICCEOIR) */
 	STR R5, [R4, #0x10] // write to ICCEOIR
@@ -123,10 +131,12 @@ CONFIG_GIC:
 * 2. enable the interrupt in the ICDISERn register */
 
 /* CONFIG_INTERRUPT (int_ID (R0), CPU_target (R1)); */
-	MOV R0, #80 // KEY port (Interrupt ID = 73)
+	MOV R0, #80 // KEY port (Interrupt ID = 80)
 	MOV R1, #1 // this field is a bit-mask; bit 0 targets cpu0
 	BL CONFIG_INTERRUPT
-	
+	MOV R0, #73
+	MOV R1, #1
+	BL CONFIG_INTERRUPT
 	/* configure the GIC CPU Interface */
 	LDR R0, =0xFFFEC100 // base address of CPU Interface
 	
@@ -306,7 +316,47 @@ Write_All_Digits:
 
 
 
+KEY_ISR:
+	LDR R0, =BUTTONS_BASE // base address of pushbutton KEY port	
+	LDR R9, =BRAIN_STATUS_ADDRESS // base address of pushbutton KEY port
 
+	LDR R1, [R0, #0xC] // read edge capture register
+	MOV R2, #0xF
+	STR R2, [R0, #0xC] // clear the interrupt
+CHECK_KEY0:
+	MOV R3, #0x1
+	ANDS R3, R3, R1 // check for KEY0
+	BEQ CHECK_KEY1
+	
+	LDR R3, =BRAIN_STATUS_ADDRESS
+	LDR R1, =BRAIN_FOCUSED_STATUS_MASK
+	STR R1,[R3]
+	LDR R6, =DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING
+	BL LoadText
+	
+	B END_KEY_ISR
+CHECK_KEY1:
+	MOV R3, #0x2
+	ANDS R3, R3, R1 // check for KEY1
+	BEQ CHECK_KEY2
+	
+	LDR R3, =BRAIN_STATUS_ADDRESS
+	LDR R1, =BRAIN_DIFFUSED_STATUS_MASK
+	STR R1,[R3]
+	LDR R6, =DECISION_STATUS_UPDATE_DIFFUSED_INFO_STRING
+	BL LoadText
+	
+	B END_KEY_ISR
+CHECK_KEY2:
+	MOV R3, #0x4
+	ANDS R3, R3, R1 // check for KEY2
+	BEQ IS_KEY3
+	B END_KEY_ISR
+IS_KEY3:
+	 // display "4"
+END_KEY_ISR:
+	B EXIT_IRQ
+	
 
 
 
@@ -480,7 +530,7 @@ Reset_Brain_Info_End_Return:
 _stop:
 	B _stop
 
-KEY_ISR:
+UAT_INTERRUPT:
 	B Init_Input_Loop
 Show_Panel:
 	LDR R12, =PANEL_DECISION_MASK
@@ -592,8 +642,10 @@ INVALID_REQUEST_STRING:
 .asciz    "\n Please enter a valid decision input \n"
 DECISION_PANEL_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Enter 1 to open Brain Panel , Enter 2 to open Machine Panel \n >"
-DECISION_STATUS_UPDATE_INFO_STRING: // ADD CATEGORY // INFO cOUNT
-.asciz "\n Brain Set To = "
+DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING: 
+.asciz "\n Brain Set To FOCUSED State "
+DECISION_STATUS_UPDATE_DIFFUSED_INFO_STRING: 
+.asciz "\n Brain Set To DIFFUSED State "
 DECISION_STATUS_FOCUSED_STRING: // ADD CATEGORY // INFO cOUNT
 .asciz "\n Brain Is FOCUSED you can enter information \n"
 DECISION_STATUS_DIFFUSED_STRING: // ADD CATEGORY // INFO cOUNT
