@@ -322,6 +322,9 @@ Put_Info_To_Brain_Helper_Loop:
 	STR R0,[R7]
 	CMP R9,R2
 	BGE Put_Info_To_Brain_Helper_Loop
+	SUB R0,R0,#1
+	MOV R10, #0x23
+	STRB R10,[R0]
 	B Reset_Info_Input_Machine
 	
 	
