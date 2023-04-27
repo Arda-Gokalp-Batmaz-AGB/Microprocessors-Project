@@ -293,6 +293,8 @@ Write_All_Digits:
 	LSL R3, #24
 	ADD R0,R0,R3
 	STR R0,[R2]
+	CMP R10,#1
+	BEQ Reset_Brain_Info_End_Return
 	B End_Show_Brain_Info
 
 
@@ -424,6 +426,7 @@ Show_Brain_Info:
 	LDR R9, [R2]
 	LDR R2, =BRAIN_BASE_ADDRESS
 	SUB R9,R9,R2
+	MOV R10,#0
 	PUSH {R0-R10}
 	B Display_Number
 
@@ -450,6 +453,16 @@ Reset_Brain_Info_Loop:
 	B Reset_Brain_Info_Loop
 
 Reset_Brain_Info_End:
+	MOV R9,#0
+	MOV R10,#1
+	PUSH {R0-R10}
+	B Display_Number
+
+	
+
+Reset_Brain_Info_End_Return:	
+	POP {R0-R10}
+	
 	LDR R10, =BRAIN_RESET_ADDRESS
 	LDR R2, =BRAIN_RESET_MASK
 	AND R2,R2,#0
@@ -458,14 +471,11 @@ Reset_Brain_Info_End:
 	LDR R10, =BRAIN_POINTER_ADDRESS
 	LDR R2, =BRAIN_BASE_ADDRESS
 	STR R2,[R10]
-	
 	LDR R12, =PANEL_DECISION_MASK
 	LDR R6, =BRAIN_RESET_STRING
 	BL LoadText
 	LDR R6, =DECISION_PANEL_STRING
 	BL LoadText
-	
-	
 	B END_INPUT_LOOP
 _stop:
 	B _stop
