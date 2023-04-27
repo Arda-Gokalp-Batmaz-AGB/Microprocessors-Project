@@ -27,10 +27,10 @@
 
 .equ BRAIN_BASE_ADDRESS, 0xFFFF0110
 .equ BRAIN_MAX_ADDRESS,  0xFFFFe9f0
-.equ BRAIN_POINTER_ADDRESS, 0xFFFF010
-.equ BRAIN_COUNTER_ADDRESS, 0xFFFF014
-.equ BRAIN_RESET_ADDRESS, 0xFFFF018
-.equ BRAIN_STATUS_ADDRESS, 0xFFFF01c
+.equ BRAIN_POINTER_ADDRESS, 0xFFFF0100
+.equ BRAIN_COUNTER_ADDRESS, 0xFFFF0104
+.equ BRAIN_RESET_ADDRESS, 0xFFFF0108 // writing 1 resets
+.equ BRAIN_STATUS_ADDRESS, 0xFFFF010c
 
 
 .equ MEMORY_RESET_MASK, 0xaaaaaaaa
@@ -277,6 +277,8 @@ Brain_Decision:
 	
 	CMP R10,#0x31 // 1 ENTERED
 	BEQ Show_Brain_Info
+	CMP R10,#0x33 // 3 ENTERED
+	BEQ Reset_Brain_Info
 	
 	B Invalid_Request
 Show_Brain_Info:
@@ -286,6 +288,40 @@ Show_Brain_Info:
 	MOV R6,R2
 	BL LoadText
 	B Show_Panel
+Reset_Brain_Info:
+	LDR R10, =BRAIN_RESET_ADDRESS
+	LDR R2, =BRAIN_RESET_MASK
+	STR R2,[R10]
+	
+	LDR R2, =BRAIN_POINTER_ADDRESS
+	LDR R9, [R2]
+	LDR R2, =BRAIN_BASE_ADDRESS
+	
+	LDR R10,[R10]
+	CMP R10,#1
+	BEQ Reset_Brain_Info_Loop
+Reset_Brain_Info_Loop:
+	LDR R10, =MEMORY_RESET_MASK
+	STR R10, [R2],#4
+	CMP R2,R9
+	BGE Reset_Brain_Info_End
+	B Reset_Brain_Info_Loop
+
+Reset_Brain_Info_End:
+	LDR R10, =BRAIN_RESET_ADDRESS
+	LDR R2, =BRAIN_RESET_MASK
+	AND R2,R2,#0
+	STR R2,[R10]
+	//MASK BITI SIFIRLA
+	
+	LDR R12, =PANEL_DECISION_MASK
+	LDR R6, =BRAIN_RESET_STRING
+	BL LoadText
+	LDR R6, =DECISION_PANEL_STRING
+	BL LoadText
+	
+	
+	B END_INPUT_LOOP
 _stop:
 	B _stop
 
@@ -320,7 +356,6 @@ Reset_Info_Helper_Loop:
 	CMP R2,R9
 	BGE End_Info_Input
 	B Reset_Info_Helper_Loop
-	// ADD THEM TO BRAIN before reset
 Put_Info_To_Brain:
 	LDR R2, =MACHINE_POINTER_ADDRESS
 	LDR R9, [R2]
@@ -394,6 +429,8 @@ MACHINE_DECISION_STRING:
 .asciz "\n Enter 1 to Open Injection , Enter 2 to see Machine's Situation \n >"
 BRAIN_DECISION_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
 .asciz    "Enter 1 to see Brain Data, Enter 2 to see Brain's Situation, Enter 3 to see Reset Brain \n > "
+BRAIN_RESET_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
+.asciz    "Brain reset successfully\n > "
 INFO_INPUT_SUCESS:
 .asciz    "\n Information injection to the Brain is Successfull! \n"
 INVALID_REQUEST_STRING:
