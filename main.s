@@ -54,14 +54,12 @@ _start:
 	LDR R3, =BRAIN_STATUS_ADDRESS
 	LDR R1, =BRAIN_FOCUSED_STATUS_MASK
 	STR R1,[R3]
-	LDR R6, =DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING
-	BL LoadText
+	//LDR R6, =DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING
+	//BL LoadText
 	
 	LDR R3, =MACHINE_STATUS_ADDRESS
 	LDR R1, =MACHINE_OPEN_STATUS_MASK
 	STR R1,[R3]
-	LDR R6, =MACHINE_STATUS_UPDATE_OPEN_INFO_STRING
-	BL LoadText
 	
 	
 	LDR R12, =PANEL_DECISION_MASK
@@ -495,8 +493,29 @@ Machine_Decision:
 	
 	CMP R10,#0x31 // 1 ENTERED
 	BEQ Injection_Decision
+
+	CMP R10,#0x32 // 2 ENTERED
+	BEQ Show_Machine_Status
 	
 	B Invalid_Request
+Show_Machine_Status:
+	PUSH {R0-R10}
+	LDR R3, =MACHINE_STATUS_ADDRESS
+	LDR R1,[R3]
+	LDR R4, =MACHINE_OPEN_STATUS_MASK
+	LDR R2, =MACHINE_STATUS_OPEN_INFO_STRING
+	CMP R1,R4
+	MOVEQ R6,R2
+	BLEQ LoadText
+	
+	LDR R4, =MACHINE_CLOSED_STATUS_MASK
+	LDR R2, =MACHINE_STATUS_CLOSED_INFO_STRING
+	CMP R1,R4
+	MOVEQ R6,R2
+	BLEQ LoadText
+	
+	POP {R0-R10}
+	B Show_Panel
 Brain_Decision:
 	MOV R11, #0x0a
 	STR R11, [R1]
@@ -718,13 +737,17 @@ DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING:
 DECISION_STATUS_UPDATE_DIFFUSED_INFO_STRING: 
 .asciz "\n Brain Set To DIFFUSED State "
 DECISION_STATUS_FOCUSED_STRING: 
-.asciz "\n Brain Is FOCUSED you can enter information \n"
+.asciz "\n Brain Is FOCUSED you can inject information \n"
 DECISION_STATUS_DIFFUSED_STRING: 
-.asciz "\n Brain Is DIFFUSED you can't enter information \n"
+.asciz "\n Brain Is DIFFUSED you can't inject information \n"
 MACHINE_STATUS_UPDATE_OPEN_INFO_STRING: 
 .asciz "\n Machine Set To OPEN State "
 MACHINE_STATUS_UPDATE_CLOSED_INFO_STRING: 
 .asciz "\n Machine Set To CLOSED State "
+MACHINE_STATUS_OPEN_INFO_STRING: 
+.asciz "\n Machine is OPEN you can enter information "
+MACHINE_STATUS_CLOSED_INFO_STRING: 
+.asciz "\n Machine is CLOSED you can't enter information "
 INFO_INPUT_PROHIBITED_IN_DIFFUSED_MODE_STRING: 
 .asciz "\n Brain Is in DIFFUSED mode therefore you can't enter information \n"
 TOTAL_INFO_COUNT_STRING: 
