@@ -19,18 +19,23 @@
 .equ BRAIN_FOCUSED_STATUS_MASK, 0b1
 .equ BRAIN_DIFFUSED_STATUS_MASK, 0b10
 
+.equ MACHINE_OPEN_STATUS_MASK, 0b1
+.equ MACHINE_CLOSED_STATUS_MASK, 0b10
+
 .equ BRAIN_RESET_MASK, 0b1
 
 .equ MACHINE_BASE_ADDRESS, 0xFFFFea10 // MAX ADD  0xFFFFF300
 .equ MACHINE_MAX_ADDRESS, 0xFFFFF300 // MAX ADD  
 .equ MACHINE_POINTER_ADDRESS, 0xFFFFea00
+.equ MACHINE_RESET_ADDRESS, 0xFFFFea04 // Control bit
+.equ MACHINE_STATUS_ADDRESS, 0xFFFFea08 // Status bit
 
 .equ BRAIN_BASE_ADDRESS, 0xFFFF0110
 .equ BRAIN_MAX_ADDRESS,  0xFFFFe9f0
 .equ BRAIN_POINTER_ADDRESS, 0xFFFF0100
 .equ BRAIN_COUNTER_ADDRESS, 0xFFFF0104
-.equ BRAIN_RESET_ADDRESS, 0xFFFF0108 // writing 1 resets
-.equ BRAIN_STATUS_ADDRESS, 0xFFFF010c
+.equ BRAIN_RESET_ADDRESS, 0xFFFF0108 // Control bit
+.equ BRAIN_STATUS_ADDRESS, 0xFFFF010c // Status bit
 
 
 .equ MEMORY_RESET_MASK, 0xaaaaaaaa
@@ -44,13 +49,29 @@ HEXTABLE: .word 0b00111111,0b00000110,0b01011011,0b01001111,0b01100110,0b0110110
 .global _start
 _start:
 	BL Init_Machine_And_Brain
-	//R2 WILL BE MACHINE_CURRENT_ADDRESS POINTER
-	//wWrite Panel
+
+
+	LDR R3, =BRAIN_STATUS_ADDRESS
+	LDR R1, =BRAIN_FOCUSED_STATUS_MASK
+	STR R1,[R3]
+	LDR R6, =DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING
+	BL LoadText
+	
+	LDR R3, =MACHINE_STATUS_ADDRESS
+	LDR R1, =MACHINE_OPEN_STATUS_MASK
+	STR R1,[R3]
+	LDR R6, =MACHINE_STATUS_UPDATE_OPEN_INFO_STRING
+	BL LoadText
+	
+	
 	LDR R12, =PANEL_DECISION_MASK
 	LDR  R6, =DECISION_PANEL_STRING
 	PUSH {R0-R11, LR}
 	BL LoadText
 	POP {R0-R11, LR}
+	
+
+	
 	B InitInterrupts
 
 Init_Machine_And_Brain:
@@ -351,9 +372,20 @@ CHECK_KEY2:
 	MOV R3, #0x4
 	ANDS R3, R3, R1 // check for KEY2
 	BEQ IS_KEY3
+	
+	LDR R3, =MACHINE_STATUS_ADDRESS
+	LDR R1, =MACHINE_OPEN_STATUS_MASK
+	STR R1,[R3]
+	LDR R6, =MACHINE_STATUS_UPDATE_OPEN_INFO_STRING
+	BL LoadText
+	
 	B END_KEY_ISR
 IS_KEY3:
-	 // display "4"
+	LDR R3, =MACHINE_STATUS_ADDRESS
+	LDR R1, =MACHINE_CLOSED_STATUS_MASK
+	STR R1,[R3]
+	LDR R6, =MACHINE_STATUS_UPDATE_CLOSED_INFO_STRING
+	BL LoadText
 END_KEY_ISR:
 	B EXIT_IRQ
 	
@@ -667,35 +699,35 @@ WAIT:
 
 	
 .data  // Data Section
-// Define a null-terminated string
-INFO_PROMPT_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
+INFO_PROMPT_STRING: 
 .asciz    "Enter Information You Want to Inject \n > "
 MACHINE_DECISION_STRING: 
 .asciz "\n Enter 1 to Open Injection , Enter 2 to see Machine's Status \n >"
-BRAIN_DECISION_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
+BRAIN_DECISION_STRING: 
 .asciz    "Enter 1 to see Brain Data, Enter 2 to see Brain's status, Enter 3 to reset Brain \n > "
-BRAIN_RESET_STRING: // ADD CATEGORY // INFO cOUNT //DISPLAY
+BRAIN_RESET_STRING:
 .asciz    "Brain reset successfully\n > "
 INFO_INPUT_SUCESS:
 .asciz    "\n Information injection to the Brain is Successfull! \n"
 INVALID_REQUEST_STRING:
 .asciz    "\n Please enter a valid decision input \n"
-DECISION_PANEL_STRING: // ADD CATEGORY // INFO cOUNT
+DECISION_PANEL_STRING: 
 .asciz "\n Enter 1 to open Brain Panel , Enter 2 to open Machine Panel \n >"
 DECISION_STATUS_UPDATE_FOCUSED_INFO_STRING: 
 .asciz "\n Brain Set To FOCUSED State "
 DECISION_STATUS_UPDATE_DIFFUSED_INFO_STRING: 
 .asciz "\n Brain Set To DIFFUSED State "
-DECISION_STATUS_FOCUSED_STRING: // ADD CATEGORY // INFO cOUNT
+DECISION_STATUS_FOCUSED_STRING: 
 .asciz "\n Brain Is FOCUSED you can enter information \n"
-DECISION_STATUS_DIFFUSED_STRING: // ADD CATEGORY // INFO cOUNT
+DECISION_STATUS_DIFFUSED_STRING: 
 .asciz "\n Brain Is DIFFUSED you can't enter information \n"
-INFO_INPUT_PROHIBITED_IN_DIFFUSED_MODE_STRING: // ADD CATEGORY // INFO cOUNT
+MACHINE_STATUS_UPDATE_OPEN_INFO_STRING: 
+.asciz "\n Machine Set To OPEN State "
+MACHINE_STATUS_UPDATE_CLOSED_INFO_STRING: 
+.asciz "\n Machine Set To CLOSED State "
+INFO_INPUT_PROHIBITED_IN_DIFFUSED_MODE_STRING: 
 .asciz "\n Brain Is in DIFFUSED mode therefore you can't enter information \n"
-TOTAL_INFO_COUNT_STRING: // ADD CATEGORY // INFO cOUNT
+TOTAL_INFO_COUNT_STRING: 
 .asciz "\n Total Info Count:"
 
-INFO_STRING:
-.asciz "Brain panel remove info, see infos, frequently used infos, remove some info in order to add new ones, reset buttons on brain and enter panel \033[2J"
-.asciz    "Enter 1 To Inject Information to Brain \n Enter 2 to see Injected Information Enter 3 to see injected info in specific category, category count \n Enter 4 to show total info count \n Enter 5 to return main menu"
 .end
