@@ -462,7 +462,7 @@ Panel_Decision:
 	
 	CMP R10,#0x31 // 1 ENTERED
 	BEQ Open_Brain_Panel
-	CMP R10,#0x32
+	CMP R10,#0x32 // 2 ENTERED
 	BEQ Open_Machine_Panel
 	
 	B Invalid_Request
@@ -492,12 +492,25 @@ Machine_Decision:
 	STR R11, [R1]
 	
 	CMP R10,#0x31 // 1 ENTERED
-	BEQ Injection_Decision
+	BEQ Machine_Check_Injection
 
 	CMP R10,#0x32 // 2 ENTERED
 	BEQ Show_Machine_Status
 	
 	B Invalid_Request
+Machine_Check_Injection:
+	PUSH {R0-R10}
+	LDR R3, =MACHINE_STATUS_ADDRESS
+	LDR R1,[R3]
+	LDR R4, =MACHINE_OPEN_STATUS_MASK
+	CMP R1,R4
+	POP {R0-R10}
+	BEQ Injection_Decision
+	B Machine_Cancel_Info_Injection
+Machine_Cancel_Info_Injection:
+	LDR R6, =MACHINE_STATUS_CLOSED_INFO_STRING
+	BL LoadText
+	B Show_Panel
 Show_Machine_Status:
 	PUSH {R0-R10}
 	LDR R3, =MACHINE_STATUS_ADDRESS
@@ -748,6 +761,8 @@ MACHINE_STATUS_OPEN_INFO_STRING:
 .asciz "\n Machine is OPEN you can enter information "
 MACHINE_STATUS_CLOSED_INFO_STRING: 
 .asciz "\n Machine is CLOSED you can't enter information "
+MACHINE_INPUT_PROHIBITED_IN_CLOSED_MODE_STRING: 
+.asciz "\n Brain Is in DIFFUSED mode therefore you can't enter information \n"
 INFO_INPUT_PROHIBITED_IN_DIFFUSED_MODE_STRING: 
 .asciz "\n Brain Is in DIFFUSED mode therefore you can't enter information \n"
 TOTAL_INFO_COUNT_STRING: 
