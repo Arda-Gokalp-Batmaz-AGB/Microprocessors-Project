@@ -102,7 +102,7 @@ InitInterrupts:
 	LDR SP, =0x3FFFFFFF - 3 // set SVC stack to top of DDR3 memory
 	BL CONFIG_GIC // configure the ARM GIC
 
-	LDR R0, =UART_BASE // pushbutton KEY base address
+	LDR R0, =UART_BASE // UART base address
 	MOV R1, #0xF // set interrupt mask bits
 	STR R1, [R0, #0x4] // interrupt mask register (base + 8)
 
