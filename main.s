@@ -654,6 +654,9 @@ Show_Brain_Info:
 	LDR R2, =BRAIN_BASE_ADDRESS
 	SUB R9,R9,R2
 	MOV R10,#0
+	
+	LDR R2, =BRAIN_COUNTER_ADDRESS
+	STR R9,[R2]
 	PUSH {R0-R10}
 	B Display_Number
 
